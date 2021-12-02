@@ -11,17 +11,15 @@
  *  in here, even better.
  */
 
-#include <cstdio>
-#include <cstdlib>
 #include <cmath>
-#include <random>
-#include <string>
+// #include <random>
 #include <ctime>
 
 #include <boost/random/random_device.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 
+#include "common_headers.hpp"
 #include "MC_functions.hpp"
 #include "MC_functions.cpp"
 
@@ -41,7 +39,9 @@ int main()
     size_t N            = L*L;
 //    double J            = 1;
 //    double kB           = 1;
-    string baseName = "formatted_name_here.dat";
+    boost::uuids::uuid id = boost::uuids::random_generator()();
+    string string_uuid = boost::uuids::to_string(id);
+    string baseName = string_uuid + ".dat";
 
     // Accumulators, etc., for desired quantities
     
@@ -50,7 +50,7 @@ int main()
     boost::random::mt19937_64 rng(rd);
     boost::random::uniform_real_distribution<double> dist01(0,1);
 //    Pars.rng(rd);
-    Params Pars(L, N, numSamp, numEqSteps, obsSkip, beta, baseName, rng, dist01);
+    Params Pars(L, N, numSamp, numEqSteps, obsSkip, beta, baseName, id, rng, dist01);
     
     // TODO: INSTANTIATE ALL REQUIRED VARIABLES & MATRICES - sigma, etc.
     // TODO: IMPLEMENT LATTICE INITIALIZATION
@@ -62,13 +62,14 @@ int main()
 //    MonteCarlo(Pars, sigma);
     
     // Simulation's done, release all that allocated memory just to be extra sure
+    // Allocated memory: sigma
     for(size_t i = 0; i < L; i++)
     {
         free(sigma[i]);
     }
     free(sigma);
 
-    printf("Success! Random value: %f\n", Pars.GetRNG01());
+    printf("Success!\nUUID: %s\nRandom value: %f\n", baseName.c_str(), Pars.GetRNG01());
     
     return EXIT_SUCCESS;
 }

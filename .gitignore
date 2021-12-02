@@ -1,3 +1,6 @@
+# VIM intermediate files
+*.swp
+
 # Prerequisites
 *.d
 

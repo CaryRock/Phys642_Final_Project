@@ -9,7 +9,7 @@
 using std::string;
 
 Params::Params(size_t len, size_t LL, size_t samples, uint64_t eqSteps, uint64_t obs, 
-        double bta, string bName, boost::random::mt19937_64 engine, 
+        double bta, string bName, boost::uuids::uuid id, boost::random::mt19937_64 engine, 
         boost::random::uniform_real_distribution<double> dist)
 {
     L = len;
@@ -19,7 +19,7 @@ Params::Params(size_t len, size_t LL, size_t samples, uint64_t eqSteps, uint64_t
     obsSkip = obs;
     beta = bta;
     baseName = bName;
-
+    uid = id;
     rng = engine;
     dist01 = dist;
 }
