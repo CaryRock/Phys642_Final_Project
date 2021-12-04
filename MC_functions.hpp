@@ -7,6 +7,8 @@
 struct Params
 {
     size_t L;
+//    size_t Lx;
+//    size_t Ly;
     size_t N;
     size_t numSamp;
     uint64_t numEqSteps;

@@ -18,37 +18,42 @@
 #include <boost/random/random_device.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
+#include <boost/program_options.hpp>
 
 #include "common_headers.hpp"
 #include "MC_functions.hpp"
 #include "MC_functions.cpp"
 
 using std::string;
+namespace br = boost::random;
+namespace bu = boost::uuids;
+namespace po = boost::program_options;
 
 int main()
 {
     // TODO: GET COMMAND-LINE OPTIONS; SYSTEM SIZE, TEMPERATURE, ETC.
     // Command-line parameters
-    size_t L            = 0;
-    double beta         = 0;
-    size_t numSamp      = 0;
-    uint64_t numEqSteps = 0;
+    size_t L            = 10;
+    double temp         = 1/3;
+    double beta         = 1/temp;
+    size_t numSamp      = 131072;   // 2^17 > 10^5
+    uint64_t numEqSteps = pow(10, 7);
     uint64_t obsSkip    = 0;
 
     // The rest of the parameters
     size_t N            = L*L;
 //    double J            = 1;
 //    double kB           = 1;
-    boost::uuids::uuid id = boost::uuids::random_generator()();
-    string string_uuid = boost::uuids::to_string(id);
+    bu::uuid id = bu::random_generator()();
+    string string_uuid = bu::to_string(id);
     string baseName = string_uuid + ".dat";
 
     // Accumulators, etc., for desired quantities
     
     // TODO: INSTANTIATE PARAMETERS STRUCT
-    boost::random::random_device rd;
-    boost::random::mt19937_64 rng(rd);
-    boost::random::uniform_real_distribution<double> dist01(0,1);
+    br::random_device rd;
+    br::mt19937_64 rng(rd);
+    br::uniform_real_distribution<double> dist01(0,1);
 //    Pars.rng(rd);
     Params Pars(L, N, numSamp, numEqSteps, obsSkip, beta, baseName, id, rng, dist01);
     
@@ -56,10 +61,10 @@ int main()
     // TODO: IMPLEMENT LATTICE INITIALIZATION
     //      IMPLEMENT INITIAL SPIN, ETC.
     int64_t **sigma;    // This one definitely needs to be signed
-    Instantiate2DArray(sigma, L);   // Just allocate all arrays all at once
-    InitializeConfig(Pars, sigma, L);
+    Instantiate2DArray(&sigma, L);   // Just allocate all arrays all at once
+    InitializeConfig(Pars, &sigma, L);
 
-//    MonteCarlo(Pars, sigma);
+    MonteCarlo(Pars, &sigma);
     
     // Simulation's done, release all that allocated memory just to be extra sure
     // Allocated memory: sigma
@@ -69,8 +74,6 @@ int main()
     }
     free(sigma);
 
-    printf("Success!\nUUID: %s\nRandom value: %f\n", baseName.c_str(), Pars.GetRNG01());
-    
     return EXIT_SUCCESS;
 }
 
