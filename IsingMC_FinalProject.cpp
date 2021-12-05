@@ -34,8 +34,8 @@ int main()
     // TODO: GET COMMAND-LINE OPTIONS; SYSTEM SIZE, TEMPERATURE, ETC.
     // Command-line parameters
     size_t L            = 10;
-    double temp         = 1/3;
-    double beta         = 1/temp;
+//    double temp         = 1/3;
+    double beta         = 1/3;
     size_t numSamp      = 131072;   // 2^17 > 10^5
     uint64_t numEqSteps = pow(10, 7);
     uint64_t obsSkip    = 0;

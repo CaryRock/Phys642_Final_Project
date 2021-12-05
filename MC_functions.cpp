@@ -116,7 +116,7 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     std::string uid_string = bu::to_string(Pars.uid);
 
     FILE *fP;   // File pointer
-    fP = fopen(fileName.c_str(), "a");
+    fP = fopen(fileName.c_str(), "w");
     fprintf(fP, "# PIMCID: %s\n", uid_string.c_str());
     fprintf(fP, "#\tE\t\tM\n");
     fclose(fP);
@@ -148,6 +148,7 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
         }
 
         // Do updates
+        // The contents in this loop should be ProposeUpdate
         for(size_t u = 0; u < Pars.N; u++)
         {
             k = dist0L(Pars.rng);

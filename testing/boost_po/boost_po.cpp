@@ -11,9 +11,13 @@ namespace po = boost::program_options;
 #include <iterator>
 #include <string>
 #include <vector>
+#define DONE_H
+#include "boost_po1.hpp"
+#include "boost_po1.cpp"
 
 using namespace std;
 
+/*
 // A helper function to simplify the main part - copied directly from the 
 // example file ("options_description.cpp")
 template<class T>
@@ -23,21 +27,18 @@ ostream &operator<<(ostream &os, const vector<T> &v)
     return os;
 }
 
-int main(int ac, char *av[])
+int GetOptions(int ac, char **av, int *opt, int *portnum)
 {
     try
     {
-        int opt;
-        int portnum;
-
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "Produce this help message and exit.")
-            ("optimization,o", po::value<int>(&opt)->default_value(10),
+            ("optimization,o", po::value<int>(opt)->default_value(10),
                 "Sets the optimization level.")
             ("verbose,v", po::value<int>()->implicit_value(1),
                 "Enable verbosity (default = 1)")
-            ("listen,l", po::value<int>(&portnum)->implicit_value(1001)
+            ("listen,l", po::value<int>(portnum)->implicit_value(1001)
                 ->default_value(0,"no"), "Listen on a port.")
             ("include-path,I", po::value< vector<string> >(),
              "Sets the path to look for inclusions.")
@@ -49,8 +50,9 @@ int main(int ac, char *av[])
         p.add("input-file", -1);
 
         po::variables_map vm;
-        po::store(po::parse_command_line(ac, av, desc).
-                  options(desc).positional(p).run(), vm);
+//        po::store(po::parse_command_line(ac, av, desc).options(desc).positional(p).run(), vm);
+//              I have no idea why the example code even uses this - it's like it's out of date
+        po::store(po::parse_command_line(ac, av, desc), vm);
         po::notify(vm);
         
         if (vm.count("help"))
@@ -78,8 +80,8 @@ int main(int ac, char *av[])
                       << vm["verbose"].as<int>() << "\n";
         }
 
-        cout << "Optimazation level is: " << opt << "\n";
-        cout << "Listen port is: " << portnum << "\n";
+        cout << "Optimazation level is: " << *opt << "\n";
+        cout << "Listen port is: " << *portnum << "\n";
                 
         if (vm.count("compression"))
         {
@@ -102,6 +104,30 @@ int main(int ac, char *av[])
     {
         cerr << "Exception of unknown type!\n";
     }
+
+    return 0;
+}
+*/
+int main(int ac, char **av)
+{
+    int opt;
+    int portnum;
+    uint64_t result = 1;
+
+    result = GetOptions(ac, av, &opt, &portnum);
+    if(result != 0)
+    {
+        cout << "Poop :(\n";
+        return 1;
+    }
+
+    else
+    {
+        cout << "Success! \n";
+    }
+    
+    cout << "In main(), opt is: " << opt << ".\n";
+    cout << "In main(), Listen port is: " << portnum << ".\n";
 
     return 0;
 }
