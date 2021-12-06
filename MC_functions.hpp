@@ -37,7 +37,7 @@ double ExpecEvalue(int64_t ***sigma, int64_t *plus1, int64_t *minus1,
 void GetProperties(Params Pars, int64_t ***sigma, int64_t *plus1, 
         int64_t *minus1, double *expecValues);
 void Update(Params Pars, int64_t ***sigma, 
-        br::uniform_int_distribution<size_t> dist0L, double *expecValues, 
-        double *deltaE, int64_t *plus1, int64_t *minus1);
-void GetCurrentMagnetization(Params Pars, int64_t ***sigma, double *expecValues);
+        br::uniform_int_distribution<size_t> dist0L, double **expecValues, 
+        int64_t *plus1, int64_t *minus1);
+void GetCurrentMagnetization(int64_t ***sigma, double **expecValues, size_t L);
 void MonteCarlo(Params Pars, int64_t ***sigma);

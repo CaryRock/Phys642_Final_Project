@@ -10,6 +10,8 @@
 
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/format.hpp> // It seems like I might as well just include <boost/kitchen_sink.hpp>
+#include <boost/math/special_functions/ellint_1.hpp>
+#include <boost/math/special_functions/ellint_2.hpp>
 
 using std::string;
 namespace br = boost::random;
@@ -41,6 +43,7 @@ void Instantiate1DArray(int64_t **array, size_t L)
 }
 
 void Instantiate2DArray(int64_t ***sigma, size_t L)
+//int64_t **Instantiate2DArray(int64_t **sigma, size_t L)
 {
     *sigma = (int64_t **) malloc(L*sizeof(int64_t *));
     for(size_t i = 0; i < L; i++)
@@ -50,6 +53,7 @@ void Instantiate2DArray(int64_t ***sigma, size_t L)
 }
 
 void InitializeConfig(Params Pars, int64_t ***sigma, size_t L)
+//int64_t
 {
     double shifted = 0;
     // Initializes a random spin configuration for matrix sigma
@@ -77,14 +81,14 @@ void PrintSigma(int64_t ***sigma, size_t L)
 }
 
 void Update(Params Pars, int64_t ***s, 
-        br::uniform_int_distribution<size_t> dist0L, double *expecValues, 
+        br::uniform_int_distribution<size_t> dist0L, double **expecValues, 
         int64_t *plus1, int64_t *minus1) 
 {
     size_t k = 0;
     size_t l = 0;
     double deltaE = 0.0;
 
-//    char ack;     // Dumb debugging
+    char ack;     // Dumb debugging
 //    PrintSigma(s, Pars.L);
 //    printf("\n");
     // Do updates
@@ -92,38 +96,43 @@ void Update(Params Pars, int64_t ***s,
     {
         k = dist0L(Pars.rng);
         l = dist0L(Pars.rng);
-        deltaE = 2.0 * (*s)[k][l] * ( (*s)[plus1[k]][l] + (*s)[minus1[k]][l] + 
+        deltaE = 0.5 * (*s)[k][l] * ( (*s)[plus1[k]][l] + (*s)[minus1[k]][l] + 
                                       (*s)[k][plus1[l]] + (*s)[k][minus1[l]] );
+
         
-        if (Pars.GetRNG01() <= exp(-deltaE*Pars.beta))
+        if (Pars.GetRNG01() <= exp(-4.0 * deltaE * Pars.beta))
         {
-            (*s)[k][l] *= -1;               // Flip that spin
-            expecValues[0] += deltaE;       // Add to energy accumulator
-            expecValues[1] += 2*(*s)[k][l]; // Add to magnetization accumulator
+//            printf("dE = %f\n", deltaE);
+//            printf("E_0 = %f\n", (*expecValues)[0]);
+            (*s)[k][l] *= -1;                   // Flip that spin
+            (*expecValues)[0] += deltaE;       // Add to energy accumulator
+            (*expecValues)[1] += 2*(*s)[k][l]; // Add to magnetization accumulator
+//            printf("E_1 = %f\n", (*expecValues)[0]);
+//            scanf("%s", &ack);
         }
     }
 //    PrintSigma(s, Pars.L);
 //    scanf("%s",&ack);
 }
 
-void GetCurrentMagnetization(int64_t ***sigma, double *expecValues, size_t L)
+void GetCurrentMagnetization(int64_t ***sigma, double **expecValues, size_t L)
 {
     for(size_t i = 0; i < L; i++)
     {
         for(size_t j = 0; j < L; j++)
         {
-            expecValues[1] += (*sigma)[i][j];
+            (*expecValues)[1] += (*sigma)[i][j];
         }
     }
 
-    expecValues[1] /= (L*L);
+    (*expecValues)[1] /= (L*L);
 }
 
 void MonteCarlo(Params Pars, int64_t ***sigma)
 {
     // Expectation value accumulator
     // Order is: E, M
-    double expecValues[2] = {0.0, 0.0};
+    double *expecValues = (double *) calloc(Pars.L, sizeof(double));
     size_t sampleCount = 0;
 
     // Miscellaneous variables and utilities
@@ -157,12 +166,12 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
 // === Begin MC loop here =====================================================
     // Equilibriate
     printf("Equlibriating...\n");
-    GetCurrentMagnetization(sigma, expecValues, Pars.L);
+    GetCurrentMagnetization(sigma, &expecValues, Pars.L);
 
     for(uint64_t step = 0; step < Pars.numEqSteps; step++)
     {
         // Perform the updates
-        Update(Pars, sigma, dist0L, expecValues, plus1, minus1);
+        Update(Pars, sigma, dist0L, &expecValues, plus1, minus1);
     }
 
     // Collect data
@@ -170,7 +179,7 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     while(sampleCount < Pars.numSamp)
     {
         // Perform the updates
-        Update(Pars, sigma, dist0L, expecValues, plus1, minus1);
+        Update(Pars, sigma, dist0L, &expecValues, plus1, minus1);
 
         fP = fopen(fileName.c_str(), "a");
         fprintf(fP, "%f\t%f\n", expecValues[0]/Pars.N, expecValues[1]/Pars.N);
@@ -183,4 +192,10 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
         }
     }
     printf("The UUID is: %s\n", uid_string.c_str());
+
+    double q = 2 * sinh(2*Pars.beta) / (cosh(2*Pars.beta) * cosh(2*Pars.beta));
+    double exactEatT = -1/tanh(2*Pars.beta) * ( 1 + 2/M_PI * (2 * tanh(2*Pars.beta) * tanh(2*Pars.beta)- 1) * boost::math::ellint_1(q) );
+    printf("Exact E at %f K: %f\n", 1/Pars.beta, exactEatT);
+    
+    free(expecValues);
 }
