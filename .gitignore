@@ -1,3 +1,6 @@
+# Data files
+*.dat
+
 # VIM intermediate files
 *.swp
 

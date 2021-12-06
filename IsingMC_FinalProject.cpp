@@ -26,7 +26,6 @@ namespace po = boost::program_options;
 
 int main(int ac, char **av)
 {
-    // TODO: GET COMMAND-LINE OPTIONS; SYSTEM SIZE, TEMPERATURE, ETC.
     // Command-line parameters
     size_t L            = 16;
 //    double temp         = 1/3;
@@ -36,7 +35,9 @@ int main(int ac, char **av)
 
     uint64_t result = GetOptions(ac, av, &L, &beta, &numSamp, &numEqSteps);
 
-    if(result == 1) {return 0; }
+    if(result == 0) {}
+
+    else if(result == 1) {return 0; }
 
     else if(result != 0 && result != 1)
     {
@@ -44,11 +45,10 @@ int main(int ac, char **av)
         return 2;
     }
 
-
     // The rest of the parameters
     size_t N            = L*L;
-//    double J            = 1;
-//    double kB           = 1;
+//    double J            = 1;  // These aren't actually implemented, but could
+//    double kB           = 1;  // be easily
     bu::uuid id = bu::random_generator()();
     string string_uuid = bu::to_string(id);
     string baseName = string_uuid + ".dat";
@@ -62,12 +62,12 @@ int main(int ac, char **av)
     Params Pars(L, N, numSamp, numEqSteps, beta, baseName, id, rng, dist01);
     
     int64_t **sigma;    // This one definitely needs to be signed
-    Instantiate2DArray(&sigma, L);   // Allocate sigma array
-    InitializeConfig(Pars, &sigma, L);
+    Instantiate2DArray(&sigma, L);      // Allocate sigma array
+    InitializeConfig(Pars, &sigma, L);  // Initialize it with random +/-1s
 
     MonteCarlo(Pars, &sigma);
     
-    // Simulation's done, release all that allocated memory just to be extra sure
+    // Simulation's done, release any that allocated memory
     // Allocated memory: sigma, 
     for(size_t i = 0; i < L; i++)
     {

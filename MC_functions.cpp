@@ -63,6 +63,19 @@ void InitializeConfig(Params Pars, int64_t ***sigma, size_t L)
     }
 }
 
+// Dumb debugging
+void PrintSigma(int64_t ***sigma, size_t L)
+{
+    for(size_t i = 0; i < L; i++)
+    {
+        for(size_t j = 0; j < L; j++)
+        {
+            printf("%+3ld", (*sigma)[i][j]);
+        }
+        printf("\n");
+    }
+}
+
 void Update(Params Pars, int64_t ***s, 
         br::uniform_int_distribution<size_t> dist0L, double *expecValues, 
         int64_t *plus1, int64_t *minus1) 
@@ -71,6 +84,9 @@ void Update(Params Pars, int64_t ***s,
     size_t l = 0;
     double deltaE = 0.0;
 
+//    char ack;     // Dumb debugging
+//    PrintSigma(s, Pars.L);
+//    printf("\n");
     // Do updates
     for(size_t u = 0; u < Pars.N; u++)
     {
@@ -81,11 +97,13 @@ void Update(Params Pars, int64_t ***s,
         
         if (Pars.GetRNG01() <= exp(-deltaE*Pars.beta))
         {
-            (*s)[k][l] *= -1;
-            expecValues[0] += deltaE;
-            expecValues[1] += 2*(*s)[k][l];
+            (*s)[k][l] *= -1;               // Flip that spin
+            expecValues[0] += deltaE;       // Add to energy accumulator
+            expecValues[1] += 2*(*s)[k][l]; // Add to magnetization accumulator
         }
     }
+//    PrintSigma(s, Pars.L);
+//    scanf("%s",&ack);
 }
 
 void GetCurrentMagnetization(int64_t ***sigma, double *expecValues, size_t L)
@@ -126,8 +144,8 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     fclose(fP);
 
     // Create lookup tables for PBCs. Why compute it every time? 
-    int64_t plus1[Pars.L] = {0};
-    int64_t minus1[Pars.L] = {0};
+    int64_t plus1[Pars.L];
+    int64_t minus1[Pars.L];
     for(size_t i = 0; i < Pars.L; i++)
     {
         plus1[i] = i+1;

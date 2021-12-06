@@ -1,7 +1,5 @@
 #! /usr/bin/env python3
-# This isn't going on anything that doesn't use python3, and if it is, they 
-# know what they're doing already.
-# Computes the Specific Heat, #1), part c. 
+# Produces a plot of <E>/N and <M>/N vs. T
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,16 +8,11 @@ import mpmath as mpm
 import os
 import sys
 
-# So, I could write some method of sifting out the temperature from the file 
-# names, OR, I can just input the range and step size manually. They all have 
-# the same range of temperatures, after all.
-
 def main():
 ### Basic variable initialization, etc. #######################################
     L       = int(sys.argv[1]) # It's very basic, but quite sufficient
-    selif = os.listdir()
-    files = sorted(selif)
-    
+    selif   = os.listdir()
+    files   = sorted(selif)
     nF      = len(selif)
     Trange = np.linspace(0.5, 3.45, len(selif))
 
@@ -28,7 +21,8 @@ def main():
 
 ### Compute Elliptic Integral, K_1(q) #########################################
     q       = np.copy(Trange)
-    exactCv   = np.copy(Trange)
+    exact   = np.copy(Trange)
+    exactM  = np.copy(Trange)
 
     Tc = 2/np.log(1+np.sqrt(2))
 
@@ -36,17 +30,17 @@ def main():
         K = 1/Trange[i]
         q[i] = 2*mpm.sinh(2*K)*mpm.sech(2*K)*mpm.sech(2*K)
     
-    # I know there's vectorize, but I can figure that out later
     for i in range(len(Trange)):
         K           = 1/Trange[i]
-        coth2K2     = ( K * mpm.coth(2*K) )
-        coth2K2     *= coth2K2
-        1mTanh2K    = mpm.tanh(2*K)
-        1mTanh2K    *= 1mTanh2K
-        2Tanh2Km1   = 1mTanh2K
-        2Tanh2Km1   = 2Tanh2Km1 - 1.0
-        1mTanh2K    = 1 - 1mTanh2K
-
+        exact[i]    = -mpm.coth(K)*(1 + 2/np.pi * (2*mpm.tanh(2*K)*mpm.tanh(2*K)-1)*ellipk(q[i]) )
+        tanh2K      = mpm.tanh(K)
+        tanh2K      *= tanh2K
+        if(Trange[i] < Tc):
+            numer       = np.power(1-tanh2K, 4)
+            denom       = 16 * tanh2K * tanh2K
+            exactM[i] = np.power(1-numer/denom, 1/8)
+        else:
+            exactM[i] = 0
 
 ### Read the data from the files and do the things ############################
     for i in range(nF):
