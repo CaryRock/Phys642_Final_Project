@@ -1,18 +1,21 @@
-# ifndef MC_FUNCTIONS
+# ifndef MC_FUNCTIONS_H
 #include "MC_functions.hpp"
 # endif
 
-# ifndef COMMON_HEADERS
+# ifndef COMMON_HEADERS_H
 #include "common_headers.hpp"
 # endif
 
+#include <iomanip>
+
 #include <boost/random/uniform_int_distribution.hpp>
+#include <boost/format.hpp> // It seems like I might as well just include <boost/kitchen_sink.hpp>
 
 using std::string;
 namespace br = boost::random;
 namespace bu = boost::uuids;
 
-Params::Params(size_t len, size_t LL, size_t samples, uint64_t eqSteps, uint64_t obs, 
+Params::Params(size_t len, size_t LL, size_t samples, uint64_t eqSteps,
         double bta, string bName, bu::uuid id, br::mt19937_64 engine, 
         br::uniform_real_distribution<double> dist)
 {
@@ -20,7 +23,6 @@ Params::Params(size_t len, size_t LL, size_t samples, uint64_t eqSteps, uint64_t
     N = LL;
     numSamp = samples;
     numEqSteps = eqSteps;
-    obsSkip = obs;
     beta = bta;
     baseName = bName;
     uid = id;
@@ -56,48 +58,47 @@ void InitializeConfig(Params Pars, int64_t ***sigma, size_t L)
         for(size_t j = 0; j < L; j++)
         {
             shifted = Pars.GetRNG01();
-//            printf("sigma: %ld\n", (*sigma)[i][j]);
             (*sigma)[i][j] = shifted < 0.5 ? -1 : 1;
         }
     }
 }
 
-bool ProposeUpdate(int64_t ***sigma, size_t L)
+void Update(Params Pars, int64_t ***s, 
+        br::uniform_int_distribution<size_t> dist0L, double *expecValues, 
+        int64_t *plus1, int64_t *minus1) 
 {
-    return true;
-    return false;
-//    (*sigma)[][]...;
-}
+    size_t k = 0;
+    size_t l = 0;
+    double deltaE = 0.0;
 
-inline int64_t ExpecMvalue(int64_t ***sigma, size_t i, size_t j)
-{
-    return (*sigma)[i][j];
-}
-
-inline double ExpecEvalue(int64_t ***sigma, int64_t *plus1, int64_t *minus1, 
-        size_t i, size_t j)
-{
-    return 1/2 * (*sigma)[i][j] * ((*sigma)[plus1[i]][j] + 
-            (*sigma)[minus1[i]][j] + (*sigma)[i][plus1[j]] + 
-            (*sigma)[i][minus1[j]]);
-}
-
-void GetProperties(Params Pars, int64_t ***sigma, int64_t *plus1, 
-        int64_t *minus1, double *expecValues)
-{
-    double M = 0;
-    double E = 0;
-    for(size_t i = 0; i < Pars.L; i++)
+    // Do updates
+    for(size_t u = 0; u < Pars.N; u++)
     {
-        for(size_t j = 0; j < Pars.L; j++)
+        k = dist0L(Pars.rng);
+        l = dist0L(Pars.rng);
+        deltaE = 2.0 * (*s)[k][l] * ( (*s)[plus1[k]][l] + (*s)[minus1[k]][l] + 
+                                      (*s)[k][plus1[l]] + (*s)[k][minus1[l]] );
+        
+        if (Pars.GetRNG01() <= exp(-deltaE*Pars.beta))
         {
-            M += ExpecMvalue(sigma, i, j);
-            E -= ExpecEvalue(sigma, plus1, minus1, i, j);
+            (*s)[k][l] *= -1;
+            expecValues[0] += deltaE;
+            expecValues[1] += 2*(*s)[k][l];
+        }
+    }
+}
+
+void GetCurrentMagnetization(int64_t ***sigma, double *expecValues, size_t L)
+{
+    for(size_t i = 0; i < L; i++)
+    {
+        for(size_t j = 0; j < L; j++)
+        {
+            expecValues[1] += (*sigma)[i][j];
         }
     }
 
-    expecValues[0] = E/(Pars.N);
-    expecValues[1] = M/(Pars.N);
+    expecValues[1] /= (L*L);
 }
 
 void MonteCarlo(Params Pars, int64_t ***sigma)
@@ -106,14 +107,17 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     // Order is: E, M
     double expecValues[2] = {0.0, 0.0};
     size_t sampleCount = 0;
-    std::string fileName = "test_output.dat";
 
     // Miscellaneous variables and utilities
-    br::uniform_int_distribution<size_t> dist0L(0, Pars.L-1); // -1 since [a,b], not [a,b)
-    size_t k = 0;
-    size_t l = 0;
-    double deltaE = 0.0;
-    std::string uid_string = bu::to_string(Pars.uid);
+    br::uniform_int_distribution<size_t> dist0L(0, Pars.L-1); 
+    string uid_string = bu::to_string(Pars.uid);
+
+    printf("The UUID is: %s\n", uid_string.c_str());
+    string Lcomp = "-L_" + std::to_string(Pars.L);
+//    string betaComp = "-B_" + std::to_string(Pars.beta);
+    boost::format betaFormatter("%06.3f");
+    string betaComp = "-B_" + (betaFormatter % Pars.beta).str();
+    string fileName = "output"+ Lcomp + betaComp + "-" + uid_string + ".dat";
 
     FILE *fP;   // File pointer
     fP = fopen(fileName.c_str(), "w");
@@ -124,87 +128,41 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     // Create lookup tables for PBCs. Why compute it every time? 
     int64_t plus1[Pars.L] = {0};
     int64_t minus1[Pars.L] = {0};
-    
     for(size_t i = 0; i < Pars.L; i++)
     {
         plus1[i] = i+1;
         minus1[i] = i-1;
     }
-    plus1[Pars.L] = 0;
+    plus1[Pars.L-1] = 0;
     minus1[0] = Pars.L-1;
-
-// Begin MC loop here
+    
+// === Begin MC loop here =====================================================
     // Equilibriate
     printf("Equlibriating...\n");
+    GetCurrentMagnetization(sigma, expecValues, Pars.L);
+
     for(uint64_t step = 0; step < Pars.numEqSteps; step++)
     {
-        // Get current magnetization
-        for(size_t i = 0; i < Pars.L; i++)
-        {
-            for(size_t j = 0; j < Pars.L; j++)
-            {
-                expecValues[1] += (*sigma)[i][j];
-            }
-        }
-
-        // Do updates
-        // The contents in this loop should be ProposeUpdate
-        for(size_t u = 0; u < Pars.N; u++)
-        {
-            k = dist0L(Pars.rng);
-            l = dist0L(Pars.rng);
-
-            deltaE = 4*ExpecEvalue(sigma, plus1, minus1, k, l);
-
-            if (Pars.dist01(Pars.rng) <= exp(-deltaE*Pars.beta))
-            {
-                (*sigma)[k][l] *= -1;
-                expecValues[1] += 2*(*sigma)[k][l];
-            }
-        }
+        // Perform the updates
+        Update(Pars, sigma, dist0L, expecValues, plus1, minus1);
     }
 
     // Collect data
     printf("Collecting data...\n");
     while(sampleCount < Pars.numSamp)
     {
-        // Get current magnetization
-        for(size_t i = 0; i < Pars.L; i++)
-        {
-            for(size_t j = 0; j < Pars.L; j++)
-            {
-                expecValues[1] += (*sigma)[i][j];
-            }
-        }
-        
-        // Do updates
-        for(size_t u = 0; u < Pars.N; u++)
-        {
-            k = dist0L(Pars.rng);
-            l = dist0L(Pars.rng);
-
-            deltaE = 4*ExpecEvalue(sigma, plus1, minus1, k, l);
-            
-            if (Pars.dist01(Pars.rng) <= exp(-deltaE*Pars.beta))
-            {
-                (*sigma)[k][l] *= -1;
-                expecValues[1] += 2*(*sigma)[k][l];
-            }
-        }
-        
-        // Any skipping would go here
-        //
-
-        // Any MC binning would go here
-        //
-
-        GetProperties(Pars, sigma, plus1, minus1, expecValues);
+        // Perform the updates
+        Update(Pars, sigma, dist0L, expecValues, plus1, minus1);
 
         fP = fopen(fileName.c_str(), "a");
-        fprintf(fP, "%f\t%f\n", expecValues[0], expecValues[1]);
+        fprintf(fP, "%f\t%f\n", expecValues[0]/Pars.N, expecValues[1]/Pars.N);
         fclose(fP);
 
         sampleCount++;
-        printf("Writing to disk sample %ld / %ld\n", sampleCount, Pars.numSamp);
+        if(sampleCount % 1024 == 0)
+        {
+            printf("Writing to disk sample %ld / %ld\n", sampleCount, Pars.numSamp);
+        }
     }
+    printf("The UUID is: %s\n", uid_string.c_str());
 }
