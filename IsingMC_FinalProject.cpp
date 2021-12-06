@@ -36,12 +36,12 @@ int main(int ac, char **av)
 
     uint64_t result = GetOptions(ac, av, &L, &beta, &numSamp, &numEqSteps);
 
-    if(result == 0) { }
+    if(result == 1) {return 0; }
 
-    else if(result != 0)
+    else if(result != 0 && result != 1)
     {
         printf("Please enter valid options and try again.\n");
-        return 1;
+        return 2;
     }
 
 

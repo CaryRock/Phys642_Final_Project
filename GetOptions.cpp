@@ -48,14 +48,14 @@ int64_t GetOptions(int64_t ac, char **av, size_t *L, double *beta,
         {
             std::cout << "Usage: options_description [options]\n";
             std::cout << desc;
-            return 0;
+            return 1;
         }
     }
 
     catch(std::exception &e)
     {
         std::cerr << "Error: " << e.what() << "\n";
-        return 1;
+        return 2;
     }
 
     catch(...)
