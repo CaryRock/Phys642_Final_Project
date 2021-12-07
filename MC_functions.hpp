@@ -14,7 +14,8 @@ struct Params
     size_t N;
     size_t numSamp;
     uint64_t numEqSteps;
-    double beta;
+//    double beta;
+    double temp;
     std::string baseName;
     boost::uuids::uuid uid;
     boost::random::mt19937_64 rng;
@@ -28,16 +29,8 @@ struct Params
 };
 
 // I know the names aren't necessary, but they're convenient bookkeeping
-void Instantiate1DArray(int64_t **array, size_t L);
-void Instantiate2DArray(int64_t ***sigma, size_t L);
-void InitializeConfig(Params, int64_t ***sigma, size_t L);
-int64_t ExpecMvalue(int64_t ***sigma, size_t i, size_t j);
-double ExpecEvalue(int64_t ***sigma, int64_t *plus1, int64_t *minus1, 
-        size_t i, size_t j);
-void GetProperties(int64_t ***sigma, double **expecValues, int64_t *plus1, 
-        int64_t *minus1, size_t L);
-void Update(Params Pars, int64_t ***sigma, 
-        br::uniform_int_distribution<size_t> dist0L, double **expecValues, 
-        int64_t *plus1, int64_t *minus1);
-void GetCurrentMagnetization(int64_t ***sigma, double **expecValues, size_t L);
-void MonteCarlo(Params Pars, int64_t ***sigma);
+double GetProperties(int64_t *sigma, int64_t *plus1, int64_t *minus1, size_t L);
+double Update(Params Pars, int64_t *sigma, 
+        br::uniform_int_distribution<size_t> *dist0L, int64_t *plus1, int64_t *minus1);
+double GetCurrentMagnetization(int64_t *sigma, size_t L);
+void MonteCarlo(Params Pars);

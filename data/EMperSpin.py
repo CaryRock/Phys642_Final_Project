@@ -15,6 +15,8 @@ def main():
     files   = sorted(selif)
     nF      = len(selif)
     Trange = np.linspace(0.5, 3.45, len(selif))
+#    for i in range(len(selif)):
+#        Trange[i] = 1/Trange[i]
 
     MperN = np.zeros(len(selif))
     EperN = np.copy(MperN)

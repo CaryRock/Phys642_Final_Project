@@ -22,7 +22,7 @@ ostream &operator<<(ostream &os, const vector<T> &v)
     return os;
 }
 
-int64_t GetOptions(int64_t ac, char **av, size_t *L, double *beta, 
+int64_t GetOptions(int64_t ac, char **av, size_t *L, double *T, // double *beta, 
         size_t *numSamp, uint64_t *numEqSteps)
 {
     try
@@ -32,8 +32,10 @@ int64_t GetOptions(int64_t ac, char **av, size_t *L, double *beta,
             ("help,h", "Produce this help message and exit.")
             ("side-length,L", po::value<size_t>(L)->default_value(16),
                 "Sets the side length of the lattice. Default: 16 sites.")
-            ("beta,B", po::value<double>(beta)->default_value(1),
-                "Sets the (inverse) temperature at which to run the simulation. Default: 1.")
+            ("temp,T", po::value<double>(T)->default_value(1),
+                "Temperature of simulation. Default: 1")
+//            ("beta,B", po::value<double>(beta)->default_value(1),
+//                "Sets the (inverse) temperature at which to run the simulation. Default: 1.")
             ("numSamp,S", po::value<size_t>(numSamp)->default_value(pow(2,17)),
                 "Sets the number of desired output samples written to the file. Default: 2^17.")
             ("numEqSteps,E", po::value<uint64_t>(numEqSteps)->default_value(pow(2,15)),

@@ -28,12 +28,13 @@ int main(int ac, char **av)
 {
     // Command-line parameters
     size_t L            = 16;
-//    double temp         = 1/3;
-    double beta         = 1;
+    double temp         = 1/3;
+//    double beta         = 1;
     size_t numSamp      = pow(2, 17);   // 2^17 > 10^5
     uint64_t numEqSteps = pow(2, 15);
 
-    uint64_t result = GetOptions(ac, av, &L, &beta, &numSamp, &numEqSteps);
+//    uint64_t result = GetOptions(ac, av, &L, &beta, &numSamp, &numEqSteps);
+    uint64_t result = GetOptions(ac, av, &L, &temp, &numSamp, &numEqSteps);
 
     if(result == 0) {}
 
@@ -59,21 +60,10 @@ int main(int ac, char **av)
     br::random_device rd;
     br::mt19937_64 rng(rd);
     br::uniform_real_distribution<double> dist01(0,1);
-    Params Pars(L, N, numSamp, numEqSteps, beta, baseName, id, rng, dist01);
+//    Params Pars(L, N, numSamp, numEqSteps, beta, baseName, id, rng, dist01);
+    Params Pars(L, N, numSamp, numEqSteps, temp, baseName, id, rng, dist01);
     
-    int64_t **sigma;    // This one definitely needs to be signed
-    Instantiate2DArray(&sigma, L);      // Allocate sigma array
-    InitializeConfig(Pars, &sigma, L);  // Initialize it with random +/-1s
-
-    MonteCarlo(Pars, &sigma);
-    
-    // Simulation's done, release any that allocated memory
-    // Allocated memory: sigma, 
-    for(size_t i = 0; i < L; i++)
-    {
-        free(sigma[i]);
-    }
-    free(sigma);
+    MonteCarlo(Pars);
 
     return 0;
 }
