@@ -20,22 +20,23 @@ def main():
     EperN = np.copy(MperN)
 
 ### Compute Elliptic Integral, K_1(q) #########################################
-    q       = np.copy(Trange)
-    exact   = np.copy(Trange)
-    exactM  = np.copy(Trange)
+    q       = np.linspace(0.5, 3.45, 2*len(selif)+1)
+    t       = np.copy(q)
+    exact   = np.copy(q)
+    exactM  = np.copy(q)
 
     Tc = 2/np.log(1+np.sqrt(2))
 
-    for i in range(len(Trange)):
-        K = 1/Trange[i]
+    for i in range(len(t)):
+        K = 1/t[i]
         q[i] = 2*mpm.sinh(2*K)*mpm.sech(2*K)*mpm.sech(2*K)
     
-    for i in range(len(Trange)):
-        K           = 1/Trange[i]
+    for i in range(len(t)):
+        K           = 1/t[i]
         exact[i]    = -mpm.coth(K)*(1 + 2/np.pi * (2*mpm.tanh(2*K)*mpm.tanh(2*K)-1)*ellipk(q[i]) )
         tanh2K      = mpm.tanh(K)
         tanh2K      *= tanh2K
-        if(Trange[i] < Tc):
+        if(t[i] < Tc):
             numer       = np.power(1-tanh2K, 4)
             denom       = 16 * tanh2K * tanh2K
             exactM[i] = np.power(1-numer/denom, 1/8)
@@ -59,7 +60,7 @@ def main():
 ### Make the plots ############################################################
     fig = plt.figure()
     plt.plot(Trange, EperN, 'b.', label="<E>/N")
-    plt.plot(Trange, exact, 'k--', label="Onsager Exact <E>/N")
+    plt.plot(t, exact, 'k--', label="Onsager Exact <E>/N")
     plt.legend()
     plt.xlabel("T (K)")
     plt.ylabel("<E>/N (units of J)")
@@ -68,7 +69,7 @@ def main():
     plt.show()
 
     plt.plot(Trange, MperN, 'r.', label="<M>/N")
-    plt.plot(Trange, exactM, 'k--', label="Onsager Exact <M>/N")
+    plt.plot(t, exactM, 'k--', label="Onsager Exact <M>/N")
     plt.legend()
     plt.xlabel("T (K)")
     plt.ylabel("<M>/N (unitless)")

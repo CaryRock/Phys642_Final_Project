@@ -67,56 +67,53 @@ void InitializeConfig(Params Pars, int64_t ***sigma, size_t L)
     }
 }
 
-// Dumb debugging
-void PrintSigma(int64_t ***sigma, size_t L)
+// void GetProperties(int64_t ***s, double **expecValues, int64_t *plus1, int64_t *minus1, size_t L)
+double GetProperties(int64_t ***s, int64_t *plus1, int64_t *minus1, size_t L)
 {
+    double E = 0;
     for(size_t i = 0; i < L; i++)
     {
         for(size_t j = 0; j < L; j++)
         {
-            printf("%+3ld", (*sigma)[i][j]);
+            E -= 0.5 * (*s)[i][j] * ( (*s)[plus1[i]][j] + (*s)[minus1[i]][j] + (*s)[i][plus1[j]] + (*s)[i][minus1[j]] );
         }
-        printf("\n");
     }
+    return E/(L*L);
 }
 
-void Update(Params Pars, int64_t ***s, 
-        br::uniform_int_distribution<size_t> dist0L, double **expecValues, 
-        int64_t *plus1, int64_t *minus1) 
+double Update(Params Pars, int64_t ***s, 
+        br::uniform_int_distribution<size_t> dist0L, int64_t *plus1, int64_t *minus1) 
 {
     size_t k = 0;
     size_t l = 0;
-    double deltaE = 0.0;
+    double deltaE = 0;
+    double M = 0;
 
-    char ack;     // Dumb debugging
-//    PrintSigma(s, Pars.L);
-//    printf("\n");
-    // Do updates
     for(size_t u = 0; u < Pars.N; u++)
     {
         k = dist0L(Pars.rng);
         l = dist0L(Pars.rng);
-        deltaE = 0.5 * (*s)[k][l] * ( (*s)[plus1[k]][l] + (*s)[minus1[k]][l] + 
+        deltaE = 2.0 * (*s)[k][l] * ( (*s)[plus1[k]][l] + (*s)[minus1[k]][l] + 
                                       (*s)[k][plus1[l]] + (*s)[k][minus1[l]] );
-
-        
-        if (Pars.GetRNG01() <= exp(-4.0 * deltaE * Pars.beta))
+        if(deltaE <= 0)
         {
-//            printf("dE = %f\n", deltaE);
-//            printf("E_0 = %f\n", (*expecValues)[0]);
-            (*s)[k][l] *= -1;                   // Flip that spin
-            (*expecValues)[0] += deltaE;       // Add to energy accumulator
-            (*expecValues)[1] += 2*(*s)[k][l]; // Add to magnetization accumulator
-//            printf("E_1 = %f\n", (*expecValues)[0]);
-//            scanf("%s", &ack);
+            (*s)[k][l] *= -1;   // Flip that spin
+            M += 2*(*s)[k][l];  // Add to M
+        }
+
+        else if (Pars.GetRNG01() <= exp(-deltaE * Pars.beta))
+        {
+            (*s)[k][l] *= -1;   // Flip that spin
+            M += 2*(*s)[k][l];  // Add to M
         }
     }
-//    PrintSigma(s, Pars.L);
-//    scanf("%s",&ack);
+
+    return M/Pars.N;
 }
 
 void GetCurrentMagnetization(int64_t ***sigma, double **expecValues, size_t L)
 {
+//    (*expecValues)[1] = 0;
     for(size_t i = 0; i < L; i++)
     {
         for(size_t j = 0; j < L; j++)
@@ -139,9 +136,7 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     br::uniform_int_distribution<size_t> dist0L(0, Pars.L-1); 
     string uid_string = bu::to_string(Pars.uid);
 
-    printf("The UUID is: %s\n", uid_string.c_str());
     string Lcomp = "-L_" + std::to_string(Pars.L);
-//    string betaComp = "-B_" + std::to_string(Pars.beta);
     boost::format betaFormatter("%06.3f");
     string betaComp = "-B_" + (betaFormatter % Pars.beta).str();
     string fileName = "output"+ Lcomp + betaComp + "-" + uid_string + ".dat";
@@ -171,31 +166,36 @@ void MonteCarlo(Params Pars, int64_t ***sigma)
     for(uint64_t step = 0; step < Pars.numEqSteps; step++)
     {
         // Perform the updates
-        Update(Pars, sigma, dist0L, &expecValues, plus1, minus1);
+        expecValues[1] = Update(Pars, sigma, dist0L, plus1, minus1);
     }
+    
+//    printf("%f\t%f\n", expecValues[0], expecValues[1]);
 
     // Collect data
     printf("Collecting data...\n");
     while(sampleCount < Pars.numSamp)
     {
         // Perform the updates
-        Update(Pars, sigma, dist0L, &expecValues, plus1, minus1);
-
+        expecValues[1] = Update(Pars, sigma, dist0L, plus1, minus1);
+        //GetProperties(sigma, &expecValues, plus1, minus1, Pars.L);
+        expecValues[0] = GetProperties(sigma, plus1, minus1, Pars.L);
+        
         fP = fopen(fileName.c_str(), "a");
-        fprintf(fP, "%f\t%f\n", expecValues[0]/Pars.N, expecValues[1]/Pars.N);
+        fprintf(fP, "%f\t%f\n", expecValues[0], expecValues[1]);
         fclose(fP);
 
         sampleCount++;
         if(sampleCount % 1024 == 0)
         {
-            printf("Writing to disk sample %ld / %ld\n", sampleCount, Pars.numSamp);
+            printf("Writing to disk sample %10ld / %10ld\r", sampleCount, Pars.numSamp);
         }
     }
+    printf("Data collection is done.\n");
     printf("The UUID is: %s\n", uid_string.c_str());
 
     double q = 2 * sinh(2*Pars.beta) / (cosh(2*Pars.beta) * cosh(2*Pars.beta));
     double exactEatT = -1/tanh(2*Pars.beta) * ( 1 + 2/M_PI * (2 * tanh(2*Pars.beta) * tanh(2*Pars.beta)- 1) * boost::math::ellint_1(q) );
-    printf("Exact E at %f K: %f\n", 1/Pars.beta, exactEatT);
+    printf("Exact E at %f K: %f\n\n", 1/Pars.beta, exactEatT);
     
     free(expecValues);
 }

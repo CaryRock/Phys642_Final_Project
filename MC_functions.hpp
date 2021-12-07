@@ -34,8 +34,8 @@ void InitializeConfig(Params, int64_t ***sigma, size_t L);
 int64_t ExpecMvalue(int64_t ***sigma, size_t i, size_t j);
 double ExpecEvalue(int64_t ***sigma, int64_t *plus1, int64_t *minus1, 
         size_t i, size_t j);
-void GetProperties(Params Pars, int64_t ***sigma, int64_t *plus1, 
-        int64_t *minus1, double *expecValues);
+void GetProperties(int64_t ***sigma, double **expecValues, int64_t *plus1, 
+        int64_t *minus1, size_t L);
 void Update(Params Pars, int64_t ***sigma, 
         br::uniform_int_distribution<size_t> dist0L, double **expecValues, 
         int64_t *plus1, int64_t *minus1);
