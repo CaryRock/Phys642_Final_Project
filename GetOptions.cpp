@@ -3,7 +3,7 @@
 // don't have to time to mess with that at the moment.
 
 #ifndef COMMON_HEADERS_H
-#include "common_headers.h"
+#include "common_headers.hpp"
 #endif
 
 #ifndef BOOST_PROGRAM_OPTIONS_SET

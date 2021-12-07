@@ -13,10 +13,11 @@
 #include <boost/program_options.hpp>
 #define BOOST_PROGRAM_OPTIONS_SET
 
+
 #include "common_headers.hpp"
 #include "MC_functions.hpp"
-#include "MC_functions.cpp"
-#include "GetOptions.cpp"
+// #include "MC_functions.cpp"
+// #include "GetOptions.cpp"
 
 using std::string;
 
