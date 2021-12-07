@@ -1,6 +1,6 @@
 CXX=g++
 CLANGXX=clang++
-CXXFLAGS=-I. --std=c++17
+CXXFLAGS=-I. --std=c++17 -O3
 LIBS=-l boost_random -l boost_program_options
 DEPS = common_headers.hpp MC_functions.hpp
 OBJ = MC_functions.o GetOptions.o IsingMC_FinalProject.o
