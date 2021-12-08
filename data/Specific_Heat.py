@@ -74,7 +74,7 @@ def main():
     for i in range(nF):
         with open(files[i],"r") as f:
             lines = (line for line in f if not line.startswith('#'))
-            data = np.loadtxt(lines, skiprows=2)
+            data = np.loadtxt(lines)
         f.close()
         
         EperN[i]    = np.average(data[:,0])
@@ -102,6 +102,11 @@ def main():
     plt.axvline(t[np.argmax(exactCv)], linestyle='dotted')
     plt.plot(Trange, specHeat, 'b.', label=r"MC $C_v$")
     plt.plot(t, exactCv, 'r--', label=r"Onsager $C_v$")
+    plt.title(f"Specific Heat, L = {L}")
+    plt.legend()
+    plt.xlabel("Temperature (K)")
+    plt.ylabel(r"$C_v$ (J)")
+    plt.savefig(f"../C_{L}.png")
     plt.show()
 
 if __name__ == "__main__":

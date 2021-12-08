@@ -65,7 +65,8 @@ def main():
     plt.legend()
     plt.xlabel("T (K)")
     plt.ylabel("<E>/N (units of J)")
-    plt.title("<E>/N vs T")
+    plt.suptitle("<E>/N vs T")
+    plt.title(f"L = {L}")
 
     plt.show()
 
@@ -74,7 +75,8 @@ def main():
     plt.legend()
     plt.xlabel("T (K)")
     plt.ylabel("<M>/N (unitless)")
-    plt.title("<M>/N vs T")
+    plt.suptitle("<M>/N vs T")
+    plt.title(f"L = {L}")
     plt.show()
 
 if __name__ == "__main__":
