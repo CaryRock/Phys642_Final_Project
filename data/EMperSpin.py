@@ -30,14 +30,13 @@ def main():
     Tc = 2/np.log(1+np.sqrt(2))
 
     for i in range(len(t)):
-        K = 1/t[i]
-        q[i] = 2*mpm.sinh(2*K)*mpm.sech(2*K)*mpm.sech(2*K)
-    
-    for i in range(len(t)):
         K           = 1/t[i]
-        exact[i]    = -mpm.coth(K)*(1 + 2/np.pi * (2*mpm.tanh(2*K)*mpm.tanh(2*K)-1)*ellipk(q[i]) )
+        q[i]        = 2 * mpm.sinh(2*K) / ( mpm.cosh(2*K) * mpm.cosh(2*K) )
+        A           = 2 * mpm.tanh(2*K) * mpm.tanh(2*K) - 1
+        exact[i]    = -mpm.coth(2*K) * (1 + 2/np.pi * A * ellipk(q[i]*q[i]) )
         tanh2K      = mpm.tanh(K)
         tanh2K      *= tanh2K
+
         if(t[i] < Tc):
             numer       = np.power(1-tanh2K, 4)
             denom       = 16 * tanh2K * tanh2K
@@ -70,7 +69,7 @@ def main():
 
     plt.show()
 
-    plt.plot(Trange, MperN, 'r.', label="<M>/N")
+    plt.plot(Trange, abs(MperN), 'r.', label="<M>/N")
     plt.plot(t, exactM, 'k--', label="Onsager Exact <M>/N")
     plt.legend()
     plt.xlabel("T (K)")
